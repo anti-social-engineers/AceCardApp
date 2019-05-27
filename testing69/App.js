@@ -57,7 +57,7 @@ class App extends Component {
         return (
             <ScrollView style={{flex: 1}}>
                 { Platform.OS === 'ios' && <View style={{ height: 60 }} /> }
-
+                <Text>Test</Text>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <Text>{`Is NFC supported ? ${supported}`}</Text>
                     <Text>{`Is NFC enabled (Android only)? ${enabled}`}</Text>
