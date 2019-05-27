@@ -7,6 +7,7 @@
  */
 
 import React, {Component} from 'react';
+import {Button} from 'react-native';
 import {Platform, StyleSheet, Text, View} from 'react-native';
 import NfcManager, {Ndef, NfcTech, ByteParser} from 'react-native-nfc-manager'
 
@@ -17,14 +18,19 @@ const instructions = Platform.select({
     'Shake or press menu button for dev menu',
 });
 
-type Props = {};
-export default class App extends Component<Props> {
+
+export default class App extends Component{
+  constructor(props){
+    super(props);
+  }
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>Welcome to React Native!</Text>
-        <Text style={styles.instructions}>To get started, edit App.js</Text>
-        <Text style={styles.instructions}>{instructions}</Text>
+        <Button title="Send request to Pi!"
+                color="#841584"
+                accessibilityLabel="Stuur een http request naar onze Raspberry Pi!"
+                onPress={() => {
+                  fetch('http://172.20.10.4:5000/Read');}} />
       </View>
     );
   }
