@@ -9,30 +9,22 @@ import {
   Picker,
   ScrollView,
 } from 'react-native';
-import NfcManager, { ByteParser, NfcTech } from 'react-native-nfc-manager';
+import NfcManager, { ByteParser, NfcTech, nfcManager } from 'react-native-nfc-manager';
 import LinearGradient from 'react-native-linear-gradient';
 import { Icon } from 'native-base';
 
 const KeyTypes = ['A', 'B'];
 
-class MifareClassic extends Component {
+class Scanner extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      supported: false,
-      enabled: false,
       isDetecting: false,
       mode: 'read',
       keyAorB: KeyTypes[1], // 'B'
-      keyToUse: 'FFFFFFFFFFFF',
-      sector: 0,
-      tag: null,
-      sectorCount: null,
-      blocksInSector: null,
-      parsedText: null,
-      firstBlockInSector: null,
-      textToWrite: 'Hello, world!',
-      block:0
+      keyToUse: '754264355f5d',
+      sector: 10,
+      sectorData: ''
     };
   }
   static navigationOptions = {
@@ -58,24 +50,17 @@ class MifareClassic extends Component {
 
   render() {
     let {
-      supported,
-      enabled,
       isDetecting,
       keyAorB,
       keyToUse,
       sector,
-      tag,
-      sectorCount,
-      blocksInSector,
-      parsedText,
-      firstBlockInSector,
-      textToWrite,
+      sectorData,
     } = this.state;
 
     return (
       <ScrollView style={{flex: 1}}>
       <LinearGradient start={{x: 0, y: 0}} end={{x: 1, y: 0}} colors={['#000000', '#434343']} style={styles.linearGradient}>
-      <Icon style={{color:'white', paddingRight:20, margin:15, position:'absolute', alignSelf: 'flex-end'}} name="menu" onPress={() => this.props.navigation.openDrawer()}/>
+      <Icon style={{color:'white', paddingRight:20, margin:15, position:'absolute'}} name="menu" onPress={() => this.props.navigation.openDrawer()}/>
 
       <View style={{ height: 180, flex:1, flexDirection:'column'}}>
       
@@ -83,24 +68,23 @@ class MifareClassic extends Component {
       </View> 
       {!isDetecting && (
             <TouchableOpacity
-              style={{ margin: 10 }}
+              style={{ marginTop: 30 }}
               onPress={() => this._startDetection()}
             >
-              
               <Text
-                style={{color:'white', fontWeight:'bold', fontSize:30, marginTop:50, fontFamily: 'montserrat.regular', textAlign: 'center' }}
+                style={{color:'white', fontWeight:'bold', fontSize:30, marginTop:70, fontFamily: 'montserrat.regular', textAlign: 'center' }}
               >
-                {`CLICK TO START DETECTING ${this.state.mode === 'read' ? 'READ' : 'WRITE'}`}
+                {`START ${this.state.mode === 'read' ? 'READ' : 'WRITE'}`}
               </Text>
             </TouchableOpacity>
           )}
           {isDetecting && (
             <TouchableOpacity
-              style={{ margin: 10 }}
+              style={{ margin: 30 }}
               onPress={() => this._stopDetection()}
             >
-              <Text style={{color:'#9A9A9A', fontWeight:'bold', fontSize:30, marginTop:50, fontFamily: 'montserrat.regular', textAlign: 'center'}}>
-                {`CLICK TO STOP DETECTING ${this.state.mode === 'read' ? 'READ' : 'WRITE'}`}
+              <Text style={{color:'#9A9A9A', fontWeight:'bold', fontSize:30, marginTop:70, fontFamily: 'montserrat.regular', textAlign: 'center'}}>
+                {`STOP  ${this.state.mode === 'read' ? 'READ' : 'WRITE'}`}
               </Text>
             </TouchableOpacity>
             
@@ -124,30 +108,16 @@ class MifareClassic extends Component {
                     tag: null,
                     mode: 'read',
                     sectorCount: null,
-                    blocksInSector: null,
-                    parsedText: null,
-                    firstBlockInSector: null,
+                    sectorData: null,
                   })}
                 >
-                  <Text>READ</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[{ flex: 1, alignItems: 'center' }, this.state.mode !== 'read' ? {backgroundColor: '#cc0000'} : {backgroundColor: '#d0d0d0'}]}
-                  onPress={() => this.setState({
-                    tag: null,
-                    mode: 'write',
-                    sectorCount: null,
-                    blocksInSector: null,
-                    parsedText: null,
-                    firstBlockInSector: null,
-                  })}
-                >
-                  <Text>WRITE</Text>
-                </TouchableOpacity>
+           
               </View>
-              <View style={{margin:20}}>
-                <View style={{ flexDirection: 'row', marginTop: 10 }}>
-                  <Text style={{ marginRight: 33 }}>Key to use:</Text>
+
+              <View style={{marginLeft:10 , marginRight:10}}>
+                <View style={{ flexDirection: 'row' }}>
+                  <Text style={{ marginRight: 33 }}>Key:</Text>
                   {KeyTypes.map(key => (
                     <TouchableOpacity
                       key={key}
@@ -176,32 +146,7 @@ class MifareClassic extends Component {
                     onChangeText={sector => this.setState({ sector: sector })}
                   />
                 </View>
-
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ marginRight: 55 }}>Block:</Text>
-                  <Picker
-                    selectedValue={this.state.block}
-                    style={{height: 50, width: 100}}
-                    onValueChange={(itemValue, itemIndex) =>
-                      this.setState({block: itemValue})
-                    }>
-                    <Picker.Item label="1st" value={0} />
-                    <Picker.Item label="2nd" value={1} />
-                    <Picker.Item label="3rd" value={2} />
-                    <Picker.Item label="4th (WARNING SECTOR WILL DIE ON WRITE)" value={3} />
-                  </Picker>
-                </View>
               </View>
-              {this.state.mode !== 'read' && (
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ marginRight: 15 }}>Text to write:</Text>
-                  <TextInput
-                    style={{ width: 200 }}
-                    value={textToWrite}
-                    onChangeText={textToWrite => this.setState({ textToWrite })}
-                  />
-                </View>
-              )}
             </View>
           }  
           <View
@@ -209,30 +154,20 @@ class MifareClassic extends Component {
               alignItems: 'center',
               justifyContent: 'center',
               padding: 20,
-              marginTop: 20,
+              marginTop: 5,
             }}
           >
-            <Text>{`Original tag content:`}</Text>
-            <Text style={{ marginTop: 5, color: 'grey' }}>{`${
-              tag ? `${JSON.stringify(tag)} (${sectorCount} sectors)` : '---'
-            }`}</Text>
-            {parsedText && (
+            <Text>{`Data Sector ${sector}`}</Text>      
               <Text
                 style={{ marginTop: 5 }}
-              >{`Parsed Text:\n${parsedText}`}</Text>
-            )}
-            {firstBlockInSector && (
-              <Text
-                style={{ marginTop: 5 }}
-              >{`block in sector:\n${firstBlockInSector} [${blocksInSector} blocks]`}</Text>
-            )}
-          </View>
+              >{sectorData}</Text>
+              </View>
 
           <TouchableOpacity
             style={{ marginTop: 20, alignItems: 'center' }}
             onPress={this._clearMessages}
           >
-            <Text style={{ color:'grey', color:'#9A9A9A', letterSpacing:1.02, fontWeight:'bold', fontSize:15,  fontFamily: 'montserrat.regular'}}>Clear above message</Text>
+            <Text style={{ color:'grey', color:'#9A9A9A', letterSpacing:1.02, fontWeight:'bold', fontSize:15,  fontFamily: 'montserrat.regular'}}>Clear</Text>
           </TouchableOpacity>
         </View>
       
@@ -242,53 +177,27 @@ class MifareClassic extends Component {
 
   _startDetection = () => {
     const cleanUp = () => {
-      this.setState({ isDetecting: false });
+      this.setState({isDetecting: false });
       NfcManager.closeTechnology();
       NfcManager.unregisterTagEvent();
     };
-
+    
     const read = () => {
       return NfcManager.mifareClassicGetBlockCountInSector(parseInt(this.state.sector))
         .then(blocksInSector => {
           this.setState({ blocksInSector });
         })
         .then(() =>
-          NfcManager.mifareClassicReadSector(parseInt(this.state.sector)),
+         NfcManager.mifareClassicReadSector(parseInt(this.state.sector)),
         )
         .then(tag => {
-          let parsedText = ByteParser.byteToHexString(tag);
-          this.setState({ parsedText });
-        })
-        .then(() =>
-          NfcManager.mifareClassicSectorToBlock(parseInt(this.state.sector)),
-        )
-        .then(block => NfcManager.mifareClassicReadBlock(block + this.state.block))
-        .then(data => {
-          const parsedText = ByteParser.byteToString(data);
-          this.setState({ firstBlockInSector: parsedText });
-        })
+          let _sector = ByteParser.byteToString(tag);
+          let _code = _sector.slice(0, 44);
+          this.setState({ sectorData: _code });
+        });
     };
-
-    const write = () => {
-      return NfcManager.mifareClassicSectorToBlock(parseInt(this.state.sector))
-        .then(block => {
-          // Create 1 block
-          let data = [];
-          for (let i = 0; i < NfcManager.MIFARE_BLOCK_SIZE; i++) {
-            data.push(0);
-          }
-
-          // Fill the block with our text, but don't exceed the block size
-          for (let i = 0; i < this.state.textToWrite.length && i < NfcManager.MIFARE_BLOCK_SIZE; i++) {
-            data[i] = parseInt(this.state.textToWrite.charCodeAt(i));
-          } 
-
-          return NfcManager.mifareClassicWriteBlock(block + this.state.block, data);
-        })
-        .then(read)
-    };
-
-    this.setState({ isDetecting: true });
+  
+    this.setState({ isDetecting: true});
     NfcManager.registerTagEvent(tag => console.log(tag))
       .then(() => NfcManager.requestTechnology(NfcTech.MifareClassic))
       .then(() => NfcManager.getTag())
@@ -297,7 +206,7 @@ class MifareClassic extends Component {
         return NfcManager.mifareClassicGetSectorCount();
       })
       .then(sectorCount => {
-        this.setState({ sectorCount });
+        this.setState({sectorCount});
       })
       .then(() => {
         let sector = parseInt(this.state.sector);
@@ -305,8 +214,8 @@ class MifareClassic extends Component {
           this.setState({ sector: '0' });
           sector = 0;
         }
-
-        // Convert the key to a UInt8Array
+        
+        // Convert 754264355f5d the key to a UInt8Array
         const key = [];
         for (let i = 0; i < this.state.keyToUse.length - 1; i += 2) {
           key.push(parseInt(this.state.keyToUse.substring(i, i + 2), 16));
@@ -318,14 +227,14 @@ class MifareClassic extends Component {
           return NfcManager.mifareClassicAuthenticateB(sector, key);
         }
       })
-      .then(() => { return this.state.mode === 'read' ? read() : write() })
-      .then(cleanUp)
+      .then(() => { return read() })
+      .then(() => cleanUp)
       .catch(err => {
         console.warn(err);
         cleanUp();
       });
   };
-
+  
   _stopDetection = () => {
     NfcManager.cancelTechnologyRequest()
       .then(() => this.setState({ isDetecting: false }))
@@ -344,16 +253,12 @@ class MifareClassic extends Component {
 
   _clearMessages = () => {
     this.setState({
-      tag: null,
-      sectorCount: null,
-      blocksInSector: null,
-      parsedText: null,
-      firstBlockInSector: null,
+      sectorData: null
     });
   };
 }
 
-export default MifareClassic;
+export default Scanner;
 var styles = StyleSheet.create({
   linearGradient: {
     flex: 1,

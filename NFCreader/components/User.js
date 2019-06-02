@@ -30,7 +30,7 @@ class User extends Component {
         return (
             <ScrollView style={{flex: 1}}>
                 <LinearGradient start={{x: 0, y: 0}} end={{x: 1, y: 0}} colors={['#000000', '#434343']} style={styles.linearGradient}>
-                <Icon style={{color:'white', paddingRight:20, margin:15, position:'absolute', alignSelf: 'flex-end'}} name="menu" onPress={() => this.props.navigation.openDrawer()}/>
+                <Icon style={{color:'white', paddingRight:20, margin:15, position:'absolute'}} name="menu" onPress={() => this.props.navigation.openDrawer()}/>
                     <View style={{ height: 180, flex:1}}>
                     <View style={{alignItems: 'stretch', justifyContent:'center'}}>
                     </View>         
