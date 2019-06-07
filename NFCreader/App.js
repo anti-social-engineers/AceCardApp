@@ -2,20 +2,24 @@ import React, {Component} from "react";
 import { View, Text ,StyleSheet, SafeAreaView} from "react-native";
 import {createDrawerNavigator, createAppContainer, DrawerItems} from 'react-navigation'
 import Home from './components/Home'
-import MultiNdef from './components/User'
+import User from './components/User'
 import { ScrollView } from "react-native-gesture-handler";
-import API from './components/API'
 import Scanner from './components/Scanner'
+import Hidden from './components/Hidden'
+
 const Nav = createDrawerNavigator({
-  Home:Home,
+  Home:{
+    screen:Home,
+    navigationOptions: {
+      drawerLabel: <Hidden />
+    }},
   Scanner:Scanner,
-  Gebruiker:MultiNdef},
+  },
   {
     contentOptions:{
       activeTintColor:'black'
-    }
+  }
 });
-
 const App = createAppContainer(Nav)
 
 const CustomDrawerComponent = (props) => (
