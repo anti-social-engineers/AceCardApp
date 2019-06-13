@@ -8,10 +8,14 @@ import {
   TextInput,
   Picker,
   ScrollView,
+  Image
 } from 'react-native';
+import axios from 'axios';
+import config from '../config'
 import NfcManager, { ByteParser, NfcTech, nfcManager } from 'react-native-nfc-manager';
 import LinearGradient from 'react-native-linear-gradient';
 import { Icon } from 'native-base';
+import AsyncStorage from '@react-native-community/async-storage'
 
 const KeyTypes = ['A', 'B'];
 
@@ -19,12 +23,20 @@ class Scanner extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isDetecting: false,
+      isDetecting: true,
       mode: 'read',
-      keyAorB: KeyTypes[1], // 'B'
-      keyToUse: '754264355f5d',
+      keyAorB: KeyTypes[0], // 'A'
+      keyToUse: 'FFFFFFFFFFFF',
       sector: 10,
-      sectorData: ''
+      card: {card_code:''},
+      user: {
+        name: '',
+        surname: '',
+        dob: '',
+        image: '',
+        flags: ''
+      },
+      image:'../content/img/profile.png'
     };
   }
   static navigationOptions = {
@@ -38,6 +50,7 @@ class Scanner extends Component {
       this.setState({ supported });
       if (supported) {
         this._startNfc();
+        this._startDetection();
       }
     });
   }
@@ -51,138 +64,90 @@ class Scanner extends Component {
   render() {
     let {
       isDetecting,
-      keyAorB,
-      keyToUse,
-      sector,
-      sectorData,
+  
+      card,
+      user,
+      image,
     } = this.state;
 
     return (
       <ScrollView style={{flex: 1}}>
-      <LinearGradient start={{x: 0, y: 0}} end={{x: 1, y: 0}} colors={['#000000', '#434343']} style={styles.linearGradient}>
-      <Icon style={{color:'white', paddingRight:20, margin:15, position:'absolute'}} name="menu" onPress={() => this.props.navigation.openDrawer()}/>
+        
+    
+     
+  
 
-      <View style={{ height: 180, flex:1, flexDirection:'column'}}>
-      
       <View style={{alignItems: 'stretch', justifyContent:'center'}}>
-      </View> 
-      {!isDetecting && (
+                            <LinearGradient start={{x: 0, y: 0}} end={{x: 1, y: 0}} colors={['#000000', '#434343']} style={styles.linearGradient}>
+                            <Icon style={{color:'white', paddingRight:20, margin:15, position:'absolute'}} name="menu" onPress={() => this.props.navigation.openDrawer()}/>
+       
+                                <View style={{ height: 180, flex:1}}>
+            
+                                <View style={{alignItems: 'stretch', justifyContent:'center'}}>
+                                </View>         
+                                <Image style={{borderRadius:20,width: 130, height: 130, backgroundColor: 'white', position:"absolute", top:80, left:10 }} source={{uri: image}} />
+                                <View style={{ position:"absolute", top:80, left:150}}>
+                                    <Text style={{color:'grey', color:'#9A9A9A', letterSpacing:3.02, fontWeight:'bold', fontSize:23,  fontFamily: 'montserrat.regular' }}>Gebruiker</Text>
+                                    <Text style={{color:'white', letterSpacing:3.02, fontWeight:'bold', fontSize:35,  fontFamily: 'montserrat.regular' }}>{user.name}</Text>
+                                </View>
+                               
+                                </View>
+                            </LinearGradient>
+                            <View style={{
+                                flex: 1,
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'stretch',
+                            }}>
+                                <View style={{borderRadius:6, elevation:8, marginTop:50, marginRight:30 ,marginLeft: 30, height: 110, backgroundColor: 'white'}} >
+                                <Text style={{paddingLeft:25, padding:10, fontSize:15, color:'#9A9A9A', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular' }}>Algemene Informatie</Text>
+                                <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>naam: {user.name} {user.surname}</Text>
+                                <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>email: {user.surname}</Text>
+                                <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>geboortedatum: {user.dob}</Text>
+                                </View>
+                                
+                                <View style={{borderRadius:6 ,elevation:8,marginBottom:20, marginTop:20, marginRight: 30, marginLeft: 30, height: 110, backgroundColor: 'white'}} >
+                                  <Text style={{padding:20, fontSize:12, color:'#9A9A9A', letterSpacing: 0.83, fontFamily: 'montserrat.regular' }}>Bijzonderheden</Text>
+                                  <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>{user.flags}</Text>
+
+                                </View>
+                                {!isDetecting && (
             <TouchableOpacity
-              style={{ marginTop: 30 }}
+            
               onPress={() => this._startDetection()}
             >
-              <Text
-                style={{color:'white', fontWeight:'bold', fontSize:30, marginTop:70, fontFamily: 'montserrat.regular', textAlign: 'center' }}
-              >
-                {`START ${this.state.mode === 'read' ? 'READ' : 'WRITE'}`}
+          <Text style={{color:'#9A9A9A', fontWeight:'bold',fontFamily: 'montserrat.regular', textAlign: 'center'}}>
+
+                {`START MET ${this.state.mode === 'read' ? 'SCANNEN' : 'WRITE'}`}
               </Text>
             </TouchableOpacity>
           )}
           {isDetecting && (
             <TouchableOpacity
-              style={{ margin: 30 }}
               onPress={() => this._stopDetection()}
             >
-              <Text style={{color:'#9A9A9A', fontWeight:'bold', fontSize:30, marginTop:70, fontFamily: 'montserrat.regular', textAlign: 'center'}}>
-                {`STOP  ${this.state.mode === 'read' ? 'READ' : 'WRITE'}`}
+              <Text style={{color:'#9A9A9A', fontWeight:'bold',fontFamily: 'montserrat.regular', textAlign: 'center'}}>
+                {`STOP MET  ${this.state.mode === 'read' ? 'SCANNEN' : 'WRITE'}`}
               </Text>
             </TouchableOpacity>
             
-          )}   
-     
-      </View>
-      </LinearGradient>
-      <View
-      style={{
-      padding: 20,
-      paddingTop:0,
-      }}>     
-{
-            <View
-              style={{borderRadius:6 ,elevation:4, marginTop:20, marginRight:30 ,marginLeft: 30, backgroundColor: 'white'}}
-            >
-              <View style={{ flexDirection: 'row', margin: 10}}>
-                <TouchableOpacity
-                  style={[{ flex: 1, alignItems: 'center' }, this.state.mode === 'read' ? {backgroundColor: '#cc0000'} : {backgroundColor: '#d0d0d0'}]}
-                  onPress={() => this.setState({
-                    tag: null,
-                    mode: 'read',
-                    sectorCount: null,
-                    sectorData: null,
-                  })}
-                >
-                </TouchableOpacity>
-           
-              </View>
-
-              <View style={{marginLeft:10 , marginRight:10}}>
-                <View style={{ flexDirection: 'row' }}>
-                  <Text style={{ marginRight: 33 }}>Key:</Text>
-                  {KeyTypes.map(key => (
-                    <TouchableOpacity
-                      key={key}
-                      style={{ marginRight: 10 }}
-                      onPress={() => this.setState({ keyAorB: key })}
-                    >
-                      <Text style={{ color: keyAorB === key ? 'blue' : '#aaa' }}>
-                        Use key {key}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ marginRight: 35 }}>Key (hex):</Text>
-                  <TextInput
-                    style={{ width: 200 }}
-                    value={keyToUse}
-                    onChangeText={keyToUse => this.setState({ keyToUse })}
-                  />
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ marginRight: 10 }}>Sector (0-15):</Text>
-                  <TextInput
-                    style={{ width: 200 }}
-                    value={sector.toString(10)}
-                    onChangeText={sector => this.setState({ sector: sector })}
-                  />
-                </View>
-              </View>
-            </View>
-          }  
-          <View
-            style={{
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 20,
-              marginTop: 5,
-            }}
-          >
-            <Text>{`Data Sector ${sector}`}</Text>      
-              <Text
-                style={{ marginTop: 5 }}
-              >{sectorData}</Text>
-              </View>
-
-          <TouchableOpacity
-            style={{ marginTop: 20, alignItems: 'center' }}
-            onPress={this._clearMessages}
-          >
-            <Text style={{ color:'grey', color:'#9A9A9A', letterSpacing:1.02, fontWeight:'bold', fontSize:15,  fontFamily: 'montserrat.regular'}}>Clear</Text>
-          </TouchableOpacity>
-        </View>
+          )}  
+                            </View>
+                            </View> 
       
       </ScrollView>
     );
   }
 
   _startDetection = () => {
+
     const cleanUp = () => {
       this.setState({isDetecting: false });
       NfcManager.closeTechnology();
       NfcManager.unregisterTagEvent();
     };
     
-    const read = () => {
+    const read = async() => {
       return NfcManager.mifareClassicGetBlockCountInSector(parseInt(this.state.sector))
         .then(blocksInSector => {
           this.setState({ blocksInSector });
@@ -191,9 +156,50 @@ class Scanner extends Component {
          NfcManager.mifareClassicReadSector(parseInt(this.state.sector)),
         )
         .then(tag => {
-          let _sector = ByteParser.byteToString(tag);
-          let _code = _sector.slice(0, 44);
-          this.setState({ sectorData: _code });
+          let _code = ByteParser.byteToString(tag);
+          let _sector = _code.slice(0, 44);
+          let test = _sector + '0000'
+          this.setState( {card: {card_code: test} })
+        }).then( async() => {
+                       const header = 'Bearer ' + await AsyncStorage.getItem('jwt token')
+              console.log('card1')
+
+              const body = JSON.stringify(this.state.card)
+              console.log(body)
+              axios.post(config.API_URL+'/api/club/scan', body, {headers: {Authorization:header}})
+              .then((res) => {
+                console.log(res)
+                
+                this.setState({
+                  user: {
+                    name: res.data.name,
+                    surname: res.data.surname,
+                    dob: res.data.dob,
+                    image: res.data.image_path,
+                    flags: res.data.flags
+                  }
+                }, () => {
+                  axios.get(config.API_URL+'/' + this.state.user.image, {headers: {Authorization:header}, responseType:"blob"})
+                  .then(response => {
+                  
+                      const blob = response.data
+                      const fileReaderInstance = new FileReader();
+                      fileReaderInstance.readAsDataURL(blob); 
+                      fileReaderInstance.onload = () => {
+                          const base64data = fileReaderInstance.result;                
+                          this.setState({image: base64data})
+                          console.log(this.state.image)
+                      }
+
+                  })
+                  .catch(err => console.log(err));
+                }) 
+                cleanUp()        
+              })
+              .catch(err => {
+                console.log('error1')
+                console.log(err)
+              })
         });
     };
   
@@ -227,11 +233,10 @@ class Scanner extends Component {
           return NfcManager.mifareClassicAuthenticateB(sector, key);
         }
       })
-      .then(() => { return read() })
-      .then(() => cleanUp)
+
+      .then(() => {return read() }) 
       .catch(err => {
         console.warn(err);
-        cleanUp();
       });
   };
   
@@ -253,7 +258,7 @@ class Scanner extends Component {
 
   _clearMessages = () => {
     this.setState({
-      sectorData: null
+      card: null
     });
   };
 }
