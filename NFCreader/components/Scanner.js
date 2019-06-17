@@ -87,7 +87,7 @@ class Scanner extends Component {
             <View style={{alignItems: 'stretch', justifyContent:'center'}}> 
                   <LinearGradient start={{x: 0, y: 0}} end={{x: 1, y: 0}} colors={['#000000', '#434343']} style={styles.linearGradient}>
                       <View style={{ height: 180, flex:1}}> 
-                      <Image style={{borderRadius:20,width: 130, height: 130, backgroundColor: 'white', position:"absolute", top:80, left:10 }} source={require('../content/img/profile.png')} />
+                      <Image style={{borderRadius:20,width: 130, height: 130, backgroundColor: '#F1F1F1', position:"absolute", top:80, left:10 }} source={require('../content/img/profile.png')} />
                       <View style={{ position:"absolute", top:80, left:150}}>
                           <Text style={{color:'grey', color:'#9A9A9A', letterSpacing:3.02, fontWeight:'bold', fontSize:23,  fontFamily: 'montserrat.regular' }}>Gebruiker</Text>
                       </View>
@@ -146,7 +146,7 @@ class Scanner extends Component {
             <Text style={{textAlign: 'center'}}>{this.state.error}</Text> 
           <Text style={{color:'#9A9A9A', fontWeight:'bold',fontFamily: 'montserrat.regular', textAlign: 'center'}}>
 
-                {`START MET ${this.state.mode === 'read' ? 'SCANNEN' : 'WRITE'}`}
+                {`Nieuwe Scan`}
               </Text>
             </TouchableOpacity>
           )}
