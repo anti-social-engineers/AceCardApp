@@ -1,9 +1,13 @@
 import React, {Component} from "react";
 import { View, Text ,StyleSheet, SafeAreaView} from "react-native";
+
+//navigation
 import {createDrawerNavigator, createAppContainer, DrawerItems} from 'react-navigation'
+import { ScrollView } from "react-native-gesture-handler";
+
+//components
 import Home from './components/Home'
 import User from './components/User'
-import { ScrollView } from "react-native-gesture-handler";
 import Scanner from './components/Scanner'
 import Hidden from './components/Hidden'
 

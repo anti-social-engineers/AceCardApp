@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+//Styles
 import {
     View,
     Text,
@@ -9,16 +10,17 @@ import {
     ScrollView,
     Image,
     ActivityIndicator,
-
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { TextField } from 'react-native-material-textfield';
-import {Header, Left, Right} from 'react-base'
-import { Icon, Footer, Container } from 'native-base';
+
+//http client
 import axios from 'axios';
-import { TouchableOpacity } from 'react-native-gesture-handler';
-import { NavigationActions } from 'react-navigation';
+
+//local storage
 import AsyncStorage from '@react-native-community/async-storage'
+
+//components
 import User from '../components/User'
 import config from '../config'
 import Loader from './Loader'
@@ -41,20 +43,21 @@ class Home extends Component {
                 gender:'',
                 imagePath:'',
                 role:''
-
             },
             image:null,
             error: null,
-            loaded: false
+            loaded: false,
+            decodeToken: null
         }
         Loader.load(v => this.setState({loaded:true}))
     }
+
 
     handleChange = (e) => {
         this.setState({
            account:{email:this.state.email, password:this.state.password}}
         )
-      } 
+    } 
     
     handleLogout= async() => {
         await AsyncStorage.removeItem("jwt token", async() => 
@@ -68,7 +71,7 @@ class Home extends Component {
     sendData(user) {
        return <div><User user={user}/></div> 
     }
- 
+
     handleSubmit = () => {
         this.setState({loaded:false ,account:{email:this.state.email, password:this.state.password}}, () => {
             axios.post(
@@ -83,12 +86,13 @@ class Home extends Component {
                 },
                     async() => {
                         await AsyncStorage.setItem('jwt token', this.state.cache)
-                        let get = await AsyncStorage.getItem('jwt token')
+                        let token = await AsyncStorage.getItem('jwt token')
                         const header = 'Bearer ' + await AsyncStorage.getItem('jwt token')
-                        console.log(header)
-                        
                         axios.get(config.API_URL+'/api/account', {headers: {Authorization:header}})
                           .then(res => {
+                                console.log(res)
+                            if(res.data.role == 'sysop'){
+                                
                               this.setState({
                                   error: '',
                                   user:{
@@ -102,12 +106,11 @@ class Home extends Component {
                                   },
                                 },
                                 () => {
-                                
                                     console.log(this.state.user)
                                     console.log('testing')
                                     axios.get(config.API_URL+'/' + this.state.user.imagePath, {headers: {Authorization:header}, responseType:"blob"})
                                         .then(response => {
-                                        
+                                            console.log(response)
                                             const blob = response.data
                                             const fileReaderInstance = new FileReader();
                                             fileReaderInstance.readAsDataURL(blob); 
@@ -119,11 +122,15 @@ class Home extends Component {
  
                                         })
                                         .catch(err => console.log(err));
-                                   this.setState({isLogged: true, loaded: true})
-                                }
-                                
-                                )
-                          }).catch(err => console.log(err)) 
+                                    this.setState({isLogged: true, loaded: true})                   
+                                    
+                                })
+                          }
+                        else{
+                            console.log('test123')
+                            this.setState({loaded: true, error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>U heeft geen recht om in te loggen!</Text> })
+                        }}
+                          ).catch(err => console.log(err)) 
                     }
                 )
             }) .catch((error) => {
@@ -131,19 +138,23 @@ class Home extends Component {
                 console.log(error);
                 if(error == 'Error: Request failed with status code 401'){
                     console.log('handling 401');
-                    this.setState({error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>email en wachtwoord komen niet overeen!</Text> })
+                    this.setState({loaded: true, error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>email en wachtwoord komen niet overeen!</Text> })
                 }
                 if(error == 'Error: Request failed with status code 403'){
-                    console.log('handling 401');
-                    this.setState({error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>Uw account is nog niet geactiveerd!</Text> })
+                    console.log('handling 403');
+                    this.setState({loaded: true, error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>Uw account is nog niet geactiveerd!</Text> })
                 }
                 if(error == 'Error: Request failed with status code 500'){
-                    console.log('handling 401');
-                    this.setState({error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>Er is iets mis met de server!</Text> })
+                    console.log('handling 500');
+                    this.setState({loaded: true, error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>Er is iets mis met de server!</Text> })
+                }
+                if(error == 'Error: Request failed with status code 422'){
+                    console.log('handling 500');
+                    this.setState({loaded: true, error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>Onjuist e-mail adress</Text> })
                 }
                 if(error == 'Error: Request failed with status code 404'){
                     console.log('handling 404');
-                    this.setState({error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>Er is iets mis met de server!</Text> })
+                    this.setState({loaded: true, error: <Text style={{fontSize:10, color:'red', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular'}}>Er is iets mis met de server!</Text> })
                 }
               })
          
@@ -168,16 +179,16 @@ class Home extends Component {
         let { password } = this.state;
         let { error } = this.state;
         let {image} = this.state;
+
         return (
             <ScrollView style={{flex: 1}}>
                 
                 {this.state.loaded ? <View>
                         {this.state.isLogged ? 
+                    
                             <View style={{alignItems: 'stretch', justifyContent:'center'}}>
-                            <LinearGradient start={{x: 0, y: 0}} end={{x: 1, y: 0}} colors={['#000000', '#434343']} style={styles.linearGradient}>
-                            <Icon style={{color:'white', paddingRight:20, margin:15, position:'absolute'}} name="menu" onPress={() => this.props.navigation.openDrawer()}/>
+                            <LinearGradient start={{x: 0, y: 0}} end={{x: 1, y: 0}} colors={['#000000', '#434343']} style={styles.linearGradient}> 
                                 <View style={{ height: 180, flex:1}}>
-            
                                 <View style={{alignItems: 'stretch', justifyContent:'center'}}>
                                 </View>         
                                 <Image style={{borderRadius:20,width: 130, height: 130, backgroundColor: 'white', position:"absolute", top:80, left:10 }} source={{uri: image}} />
@@ -185,7 +196,6 @@ class Home extends Component {
                                     <Text style={{color:'grey', color:'#9A9A9A', letterSpacing:3.02, fontWeight:'bold', fontSize:23,  fontFamily: 'montserrat.regular' }}>{this.state.user.role}</Text>
                                     <Text style={{color:'white', letterSpacing:3.02, fontWeight:'bold', fontSize:35,  fontFamily: 'montserrat.regular' }}>{this.state.user.first_name}</Text>
                                 </View>
-                               
                                 </View>
                             </LinearGradient>
                             <View style={{
@@ -194,23 +204,33 @@ class Home extends Component {
                                 justifyContent: 'center',
                                 alignItems: 'stretch',
                             }}>
-                                <View style={{borderRadius:6, elevation:4, marginTop:50, marginRight:30 ,marginLeft: 30, height: 110, backgroundColor: 'white'}} >
+                            <View style={{borderRadius:6, elevation:4, marginTop:50, marginRight:30 ,marginLeft: 30, height: 110, backgroundColor: 'white'}} >
+                                <Text style={{paddingLeft:25, paddingRight:5, padding:10, fontSize:15, color:'#9A9A9A', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular' }}>U bent een {this.state.user.role}</Text>
+                                <Text style={{paddingLeft:40, paddingRight:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>Omdat u een {this.state.user.role} bent, heeft u het recht om de ace kaart te scannen van mensen die consumeren in uw vestiging. </Text>
+                            </View> 
+
+                            <LinearGradient colors={['#000000', '#434343']} 
+                            style={{borderRadius:4, marginLeft:30, marginRight:30, paddingTop:0, paddingBottom:0}}>
+                            <Button onPress={() => this.props.navigation.navigate('Scanner')} title={"Begin met scannen"} color="transparent" style={styles.buttonText }>
+                            </Button>
+                            </LinearGradient>
+
+                            <View style={{borderRadius:6, elevation:4, marginTop:50, marginRight:30 ,marginLeft: 30, height: 110, backgroundColor: 'white'}} >
                                 <Text style={{paddingLeft:25, padding:10, fontSize:15, color:'#9A9A9A', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular' }}>Algemene Informatie</Text>
                                 <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>naam: {this.state.user.first_name} {this.state.user.surname}</Text>
                                 <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>email: {this.state.user.mail}</Text>
                                 <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>geboortedatum: {this.state.user.dob}</Text>
                                 <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>geslacht {this.state.user.gender}</Text> 
-                                </View>
+                            </View>
                               
-                          
+                            <LinearGradient colors={['#000000', '#434343']} 
+                            style={{borderRadius:4, marginLeft:30, marginRight:30, paddingTop:0, paddingBottom:0}}>
+                            <Button onPress={this.handleLogout} title={"UitLoggen"} color="transparent" style={styles.buttonText }>
+                            </Button>
+                            </LinearGradient>
 
                             </View>
-                            <LinearGradient colors={['#000000', '#434343']} >
-                            <Footer>
-                                    <Button onPress={this.handleLogout} title={"Uitloggen   >"} color="transparent" style={styles.buttonText }>
-                                    </Button>
-                                </Footer>
-                            </LinearGradient>
+                    
 
                             </View> 
                             
@@ -222,6 +242,7 @@ class Home extends Component {
                             <View style={{alignItems: 'stretch', justifyContent:'center'}}>
                             </View> 
                             <Text style={{color:'white', fontWeight:'bold', fontSize:30, marginTop:50, fontFamily: 'montserrat.regular' }}>Inloggen</Text>
+
                             </View>
                             </LinearGradient>
                             <View
@@ -229,6 +250,7 @@ class Home extends Component {
                             padding: 20,
                             paddingTop:30,
                             }}>     
+
                             <TextField
                                 ref={this.state.email}
                                 label='Email'
