@@ -45,6 +45,7 @@ class Scanner extends Component {
       image:'../content/img/profile.png',
       error: '',
       standby: true,
+      warning:''
     };
   }
   static navigationOptions = {
@@ -77,7 +78,30 @@ class Scanner extends Component {
       user,
       image,
     } = this.state;
+    let bijzonderheden =       
+    <View style={{flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'stretch',
+    paddingTop:42}}>
+    <Image style={{ width: 25, height: 25}} source={require('../content/img/red.png')} />
+    <Text style={{marginLeft:10,paddingTop:4, fontSize:13, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>{user.flags.slice(Math.max(user.flags.length - 3, 1))}</Text>
+    </View>
 
+    let warning = "";
+    if (this.state.user.flags == 0){
+      warning = 
+      <View style={{flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'stretch',
+      paddingTop:42}}>
+      <Image style={{ width: 25, height: 25}} source={require('../content/img/green.png')} />
+      <Text style={{marginLeft:10,paddingTop:4, fontSize:13, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>{user.name} heeft geen waarschuwingen</Text>
+      </View>
+
+      ,
+      bijzonderheden = null
+    }
+    
     return (
       
       
@@ -107,9 +131,7 @@ class Scanner extends Component {
             <View> 
       <View style={{alignItems: 'stretch', justifyContent:'center'}}>
                             <LinearGradient start={{x: 0, y: 0}} end={{x: 1, y: 0}} colors={['#000000', '#434343']} style={styles.linearGradient}>
-       
                                 <View style={{ height: 180, flex:1}}>
-            
                                 <View style={{alignItems: 'stretch', justifyContent:'center'}}>
                                 </View>         
                                 <Image style={{borderRadius:20,width: 130, height: 130, backgroundColor: 'white', position:"absolute", top:80, left:10 }} source={{uri: image}} />
@@ -126,18 +148,24 @@ class Scanner extends Component {
                                 justifyContent: 'center',
                                 alignItems: 'stretch',
                             }}>
+                              {/* kop1 */}
                                 <View style={{borderRadius:6, elevation:8, marginTop:50, marginRight:30 ,marginLeft: 30, height: 110, backgroundColor: 'white'}} >
-                                <Text style={{paddingLeft:25, padding:10, fontSize:15, color:'#9A9A9A', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular' }}>Algemene Informatie</Text>
-                                <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>naam: {user.name} {user.surname}</Text>
-                                <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>email: {user.surname}</Text>
-                                <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>geboortedatum: {user.dob}</Text>
+                                  <Text style={{paddingLeft:15, padding:10, fontSize:15, color:'#9A9A9A', letterSpacing: 0.83 ,fontFamily: 'montserrat.regular' }}>Algemene Informatie</Text>
+                                  <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>naam: {user.name} {user.surname}</Text>
+                                  <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>email: {user.surname}</Text>
+                                  <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>geboortedatum: {user.dob}</Text>
                                 </View>
-                                
-                                <View style={{borderRadius:6 ,elevation:8,marginBottom:20, marginTop:20, marginRight: 30, marginLeft: 30, height: 110, backgroundColor: 'white'}} >
-                                  <Text style={{padding:20, fontSize:12, color:'#9A9A9A', letterSpacing: 0.83, fontFamily: 'montserrat.regular' }}>Bijzonderheden</Text>
-                                  <Text style={{paddingLeft:40, fontSize:12, color:'#9A9A9A', letterSpacing: 0.5 ,fontFamily: 'montserrat.regular'}}>{user.flags}</Text>
+                              {/* kop2 */}
+                              <View>  
+                              <Text>
+                              {bijzonderheden}
+                              </Text>
+                              </View>
+                              {/* kop3 */}
+                              <View style={{borderRadius:6 ,elevation:8,marginBottom:20, marginTop:20, marginRight: 30, marginLeft: 30, height: 110, backgroundColor: 'white'}} >
+                                {warning}
+                              </View>
 
-                                </View>
                                 {!isDetecting && (
             <TouchableOpacity
                                   
@@ -145,8 +173,7 @@ class Scanner extends Component {
             >
             <Text style={{textAlign: 'center'}}>{this.state.error}</Text> 
           <Text style={{color:'#9A9A9A', fontWeight:'bold',fontFamily: 'montserrat.regular', textAlign: 'center'}}>
-
-                {`START MET ${this.state.mode === 'read' ? 'SCANNEN' : 'WRITE'}`}
+                {`NIEUWE SCAN`}
               </Text>
             </TouchableOpacity>
           )}
@@ -174,7 +201,7 @@ class Scanner extends Component {
     
     //stopt met het detecteren en leegt procesdata
     const cleanUp = () => {
-      this.setState({isDetecting: false });
+      this.setState({isDetecting: false});
       NfcManager.closeTechnology();
       NfcManager.unregisterTagEvent();
     };
@@ -193,6 +220,8 @@ class Scanner extends Component {
           let _code = ByteParser.byteToString(tag);
           let _sector = _code.slice(0, 44);
           let test = _sector + '0000'
+          console.log('coding')
+          console.log(test)
           this.setState( {card: {card_code: test},standby: false})
         }).then( async() => {
               const header = 'Bearer ' + await AsyncStorage.getItem('jwt token')
@@ -210,6 +239,7 @@ class Scanner extends Component {
                     age = age - 1;
                 }
                 this.setState({
+                  error: '',
                   user: {
                     name: res.data.name,
                     surname: res.data.surname,
@@ -227,10 +257,12 @@ class Scanner extends Component {
                       fileReaderInstance.readAsDataURL(blob); 
                       fileReaderInstance.onload = () => {
                           const base64data = fileReaderInstance.result;                
-                          this.setState({image: base64data})
+                          this.setState({image: base64data
+                          })
                       }
                   })
                   .catch(err => console.log(err))
+                  console.log(this.state.user.flags.length)
                   ,cleanUp();
                 }) 
               })
