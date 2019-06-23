@@ -30,7 +30,7 @@ class Scanner extends Component {
     this.state = {
       isDetecting: true,
       mode: 'read',
-      keyAorB: KeyTypes[0], // 'A'
+      keyAorB: KeyTypes[1], // 'B'
       keyToUse: config.Key,
       sector: config.Sector,
       card: {card_code:''},
